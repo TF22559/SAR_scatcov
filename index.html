@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Imagette">
+<meta name="theme-color" content="#EDF1F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B151A" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<title>Imagette SAR océan</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+:root{
+  /* Layout : une trace au sol en pointillés, les leçons sont des vignettes posées de part et d'autre, comme les imagettes du mode vagues. */
+  --bg:#EDF1F2; --surface:#FAFBFB; --ink:#10222B; --muted:#586971; --line:#C9D2D6;
+  --sea:#0F4C5C; --accent:#D9481F; --good:#237A57; --bad:#B3261E;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B151A; --surface:#132129; --ink:#E5ECEE; --muted:#93A5AC; --line:#273A43;
+    --sea:#7CC0CF; --accent:#FF7B4F; --good:#5FC79D; --bad:#F2877E; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B151A; --surface:#132129; --ink:#E5ECEE; --muted:#93A5AC; --line:#273A43;
+  --sea:#7CC0CF; --accent:#FF7B4F; --good:#5FC79D; --bad:#F2877E; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.45rem;font-weight:700}
+h3{font-size:1.08rem;font-weight:700}
+p{margin:0}
+a{color:var(--sea)}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:860px;margin:0 auto;padding:env(safe-area-inset-top) max(18px,env(safe-area-inset-right)) calc(64px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+body{-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+nav.tabs{flex-wrap:wrap}
+.qgrid{display:grid;gap:18px;margin-top:18px}
+.qscore{font-family:var(--display);font-size:3rem;font-weight:700;line-height:1}
+.eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:18px 0 14px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand small{font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+nav.tabs{display:flex;gap:4px}
+nav.tabs a{padding:7px 12px;border-radius:6px;text-decoration:none;color:var(--muted);font-weight:500}
+nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--bg)}
+.stats{display:flex;gap:16px;font-family:var(--mono);font-size:.82rem}
+.stats b{font-weight:500;color:var(--ink)}
+.stats span{color:var(--muted)}
+
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:6px;font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
+.resume{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;margin:22px 0}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--sea)}
+.branches{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px}
+.branches button{flex:none;border:1px solid var(--line);background:transparent;border-radius:6px;padding:8px 12px;cursor:pointer;text-align:left}
+.branches button[aria-pressed="true"]{border-color:var(--sea);box-shadow:inset 0 -3px 0 var(--sea)}
+.branches small{display:block;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+
+.track{position:relative;display:grid;gap:14px;max-width:620px;margin:26px auto 0;padding:8px 0}
+.track::before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:2px dashed var(--line)}
+.node{position:relative;display:flex;align-items:center;gap:14px;width:50%;padding:0 14px 0 0;flex-direction:row-reverse;text-align:right;background:none;border:0;cursor:pointer}
+.node:nth-child(even){margin-left:50%;padding:0 0 0 14px;flex-direction:row;text-align:left}
+.node canvas{width:88px;height:88px;flex:none;border-radius:4px;border:2px solid var(--line);background:#777}
+.node .t{font-family:var(--display);font-weight:700;font-size:1rem;line-height:1.2;display:block;margin-top:2px}
+.node.open canvas{border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+.node.done canvas{border-color:var(--good)}
+.node.locked{cursor:not-allowed}
+.node.locked canvas{filter:contrast(.35) brightness(1.1);opacity:.55}
+.node.locked .t{color:var(--muted)}
+.pill{display:inline-block;font-family:var(--mono);font-size:.7rem;padding:1px 7px;border-radius:99px;border:1px solid currentColor}
+.pill.good{color:var(--good)} .pill.acc{color:var(--accent)} .pill.mut{color:var(--muted)}
+.soon{display:grid;gap:8px;margin-top:20px}
+.soon li{margin-left:18px}
+
+.player{max-width:680px;margin:22px auto 0}
+.player .bar{margin:12px 0 22px}
+.card h2{margin-bottom:12px}
+.card p{max-width:65ch;margin-bottom:12px}
+.opts{display:grid;gap:10px;margin:16px 0}
+.opt{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:12px 14px;text-align:left;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.right{border-color:var(--good);box-shadow:inset 4px 0 0 var(--good)}
+.opt.wrong{border-color:var(--bad);box-shadow:inset 4px 0 0 var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;min-height:44px;padding:8px;border:1px dashed var(--line);border-radius:8px;margin:8px 0 14px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 10px;cursor:pointer;text-align:left}
+ol.seq{margin:8px 0 14px;padding-left:22px;display:grid;gap:6px;min-height:44px}
+.match{display:grid;gap:12px;margin:14px 0}
+.match label{display:grid;gap:4px}
+.match select{padding:9px;border:1px solid var(--line);border-radius:6px;background:var(--surface);max-width:100%}
+.fb{border-left:4px solid var(--good);padding:12px 14px;background:var(--surface);border-radius:0 8px 8px 0;margin:14px 0}
+.fb.no{border-color:var(--bad)}
+.fb b{display:block;margin-bottom:4px}
+.scene{display:block;width:220px;height:220px;max-width:100%;border-radius:4px;border:1px solid var(--line);margin:10px 0}
+.cap{font-size:.84rem;color:var(--muted)}
+.sim{border:1px solid var(--line);border-radius:10px;padding:16px;margin:14px 0;background:var(--surface)}
+.sim label{display:grid;grid-template-columns:minmax(120px,1fr) 2fr auto;gap:10px;align-items:center;font-size:.9rem;margin-bottom:8px}
+.sim output{font-family:var(--mono);font-size:.84rem;min-width:64px;text-align:right}
+.sim canvas{display:block;max-width:100%;border-radius:4px;margin-top:8px}
+.sim .read{font-family:var(--mono);margin-top:10px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin:14px 0}
+.gallery canvas{width:100%;aspect-ratio:1;border-radius:4px;border:1px solid var(--line)}
+.srcs{margin:8px 0 0;padding-left:20px;display:grid;gap:6px}
+.cite{white-space:nowrap}
+
+.sec{margin-top:34px}
+.sec>h2{margin-bottom:6px}
+.paper{border-top:1px solid var(--line);padding:14px 0}
+.paper summary{cursor:pointer;list-style:none;display:grid;gap:2px}
+.paper summary::-webkit-details-marker{display:none}
+.paper summary .t{font-weight:600}
+.paper dl{display:grid;grid-template-columns:120px 1fr;gap:6px 14px;margin:12px 0 0}
+.paper dt{font-family:var(--mono);font-size:.76rem;color:var(--muted);text-transform:uppercase;padding-top:3px}
+.paper dd{margin:0;max-width:62ch}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.filters button{border:1px solid var(--line);background:transparent;border-radius:99px;padding:5px 12px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.synth p{max-width:65ch;margin:10px 0}
+.paths{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:12px}
+.paths ol{margin:8px 0 0;padding-left:20px;display:grid;gap:5px}
+textarea.bib{width:100%;height:230px;font-family:var(--mono);font-size:.78rem;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;resize:vertical}
+.note{font-size:.86rem;color:var(--muted);max-width:70ch}
+footer{margin-top:44px;padding-top:14px;border-top:1px solid var(--line)}
+
+@media (max-width:540px){
+  nav.tabs{gap:2px;width:100%}
+  nav.tabs a{padding:6px 8px;font-size:.93rem}
+  .resume{grid-template-columns:1fr}
+  .track::before{left:44px}
+  .node,.node:nth-child(even){width:100%;margin-left:0;padding:0;flex-direction:row;text-align:left}
+  .node:nth-child(even){padding-left:30px}
+  .node canvas{width:76px;height:76px}
+  .paper dl{grid-template-columns:1fr}
+  .sim label{grid-template-columns:1fr auto}
+  .sim label input{grid-column:1/-1;grid-row:2}
+}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .3s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>Imagette</h1><small>SAR · océan · bibliographie</small></div>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#parcours" data-tab="parcours">Parcours</a>
+      <a href="#revision" data-tab="revision">Révision</a>
+      <a href="#quiz" data-tab="quiz">Quiz</a>
+      <a href="#bibliotheque" data-tab="bibliotheque">Bibliothèque</a>
+    </nav>
+    <div class="stats" id="stats"></div>
+  </header>
+  <main id="main"></main>
+  <footer><p class="note" id="sync"></p></footer>
+</div>
+
+<script src="b6.js"></script>
+<script>
+"use strict";
+/* ---------- Références : chaque DOI a été vérifié en ligne ---------- */
+const REFS = {
+valenzuela1978:{a:"Valenzuela, G. R.",short:"Valenzuela (1978)",y:1978,t:"Theories for the interaction of electromagnetic and oceanic waves — A review",j:"Boundary-Layer Meteorology",v:"13",p:"61–85",doi:"10.1007/BF00913863",th:"vagues",
+ q:"Quelles théories décrivent la diffusion d'une onde radar par la surface de la mer ?",
+ ap:"Article de synthèse. Il passe en revue les méthodes analytiques de diffusion électromagnétique utiles à la télédétection de l'océan et retient la diffusion résonante, dite de Bragg, comme mécanisme principal de l'interaction entre micro-ondes et surface.",
+ g:"Les incidences proches de la verticale font exception : la résonance de Bragg n'y domine plus.",pre:[]},
+alpers1981:{a:"Alpers, W. R., Ross, D. B. et Rufenach, C. L.",short:"Alpers et al. (1981)",y:1981,t:"On the detectability of ocean surface waves by real and synthetic aperture radar",j:"Journal of Geophysical Research",v:"86(C7)",p:"6481–6498",doi:"10.1029/JC086iC07p06481",th:"vagues",
+ q:"Pourquoi voit-on des vagues sur une image radar, et pourquoi pas toujours les mêmes avec un radar réel et un SAR ?",
+ ap:"Pose le cadre encore utilisé aujourd'hui. Pour le radar à ouverture réelle : fonctions de transfert linéaires calculées avec le modèle à deux échelles. Pour le SAR : rôle central de la vitesse et de l'accélération orbitales des vagues longues.",
+ g:"La vitesse de phase des vagues longues n'entre pas dans la formation de l'image SAR.",pre:["valenzuela1978"]},
+hh1991:{a:"Hasselmann, K. et Hasselmann, S.",short:"Hasselmann et Hasselmann (1991)",y:1991,t:"On the nonlinear mapping of an ocean wave spectrum into a synthetic aperture radar image spectrum and its inversion",j:"Journal of Geophysical Research",v:"96(C6)",p:"10713–10729",doi:"10.1029/91JC00302",th:"vagues",
+ q:"Comment passer du spectre de vagues au spectre de l'image SAR, et revenir en arrière ?",
+ ap:"Donne une relation intégrale non linéaire fermée entre les deux spectres. Son premier terme est l'approximation quasi linéaire : la transformée linéaire multipliée par un facteur gaussien de coupure azimutale, dont l'échelle est le déplacement azimutal quadratique moyen.",
+ g:"L'inversion a besoin d'un spectre a priori : il faut lever l'ambiguïté de 180° et remplacer l'information perdue au-delà de la coupure.",pre:["alpers1981"]},
+kerbaol1998:{a:"Kerbaol, V., Chapron, B. et Vachon, P. W.",short:"Kerbaol et al. (1998)",y:1998,t:"Analysis of ERS-1/2 synthetic aperture radar wave mode imagettes",j:"Journal of Geophysical Research",v:"103(C4)",p:"7833–7846",doi:"10.1029/97JC01579",th:"vagues",
+ q:"Que contiennent statistiquement les imagettes du mode vagues d'ERS ?",
+ ap:"Analyse plus de 2000 imagettes en les comparant aux mesures du diffusiomètre embarqué sur le même instrument. L'étude couvre l'étalonnage, la coupure azimutale et les statistiques d'ordre supérieur du signal.",
+ g:"Les statistiques s'écartent de la loi de Rayleigh attendue pour du speckle pur, un effet attribué à la haute résolution du SAR.",pre:["hh1991"]},
+stopa2017:{a:"Stopa, J. E. et Mouche, A.",short:"Stopa et Mouche (2017)",y:2017,t:"Significant wave heights from Sentinel-1 SAR: Validation and applications",j:"Journal of Geophysical Research: Oceans",v:"122(3)",p:"1827–1848",doi:"10.1002/2016JC012364",th:"vagues",
+ q:"Peut-on estimer la hauteur significative directement depuis une vignette Sentinel-1 ?",
+ ap:"Deux algorithmes empiriques pour le mode vagues de Sentinel-1A. CWAVE_S1A prolonge une méthode développée pour ERS-2. Fnn utilise la coupure azimutale, avec d'autres paramètres, pour estimer hauteur significative et période moyenne.",
+ g:"Ce sont des méthodes empiriques : elles ne passent pas par une fonction de transfert de modulation.",pre:["kerbaol1998"]},
+torres2012:{a:"Torres, R., Snoeij, P., Geudtner, D., et al.",short:"Torres et al. (2012)",y:2012,t:"GMES Sentinel-1 mission",j:"Remote Sensing of Environment",v:"120",p:"9–24",doi:"10.1016/j.rse.2011.05.028",th:"mission",
+ q:"Quels sont les objectifs et la conception de la mission Sentinel-1 ?",
+ ap:"Article de référence de la mission : constellation de SAR en bande C, modes d'acquisition, données libres et gratuites. C'est la citation habituelle pour décrire le mode vagues.",
+ g:"Écrit avant le lancement : les performances annoncées sont des spécifications.",pre:[]},
+wang2019:{a:"Wang, C., Mouche, A., Tandeo, P., Stopa, J. E., Longépé, N., Erhard, G., Foster, R. C., Vandemark, D. et Chapron, B.",short:"Wang et al. (2019)",y:2019,t:"A labelled ocean SAR imagery dataset of ten geophysical phenomena from Sentinel-1 wave mode",j:"Geoscience Data Journal",v:"6(2)",p:"105–115",doi:"10.1002/gdj3.73",th:"methodes",
+ q:"Existe-t-il un jeu de vignettes SAR étiquetées par phénomène géophysique ?",
+ ap:"Publie TenGeoP-SARwv : plus de 37 000 vignettes Sentinel-1A de 2016, choisies et étiquetées à la main en dix classes océaniques et atmosphériques. Premier jeu de ce type au large.",
+ g:"Une seule étiquette par image : le phénomène dominant. Les superpositions ne sont pas décrites.",pre:["torres2012"]},
+atlas1994a:{a:"Atlas, D.",short:"Atlas (1994a)",y:1994,t:"Footprints of storms on the sea: A view from spaceborne synthetic aperture radar",j:"Journal of Geophysical Research",v:"99",p:"",doi:"10.1029/94JC00250",th:"pluie",
+ q:"D'où viennent les empreintes d'orages vues par le SAR de Seasat en 1978 ?",
+ ap:"Propose une lecture d'ensemble : un trou sans écho sous le cœur de pluie, entouré d'échos dus au vent qui diverge depuis le courant descendant, jusqu'à un front de rafale net. L'empreinte reproduit les traits d'une microrafale.",
+ g:"L'auteur écrit lui-même qu'une partie de cette synthèse reste spéculative.",pre:[]},
+atlas1994b:{a:"Atlas, D.",short:"Atlas (1994b)",y:1994,t:"Origin of storm footprints on the sea seen by synthetic aperture radar",j:"Science",v:"266(5189)",p:"1364–1366",doi:"10.1126/science.266.5189.1364",th:"pluie",
+ q:"L'explication des empreintes d'orages tient-elle face à une mesure indépendante ?",
+ ap:"Un radar météorologique côtier, à Cape Hatteras, apporte la confirmation : le trou sans écho vient de l'amortissement des vagues par la pluie, et la zone brillante autour vient de la divergence du courant descendant.",
+ g:"L'étude repose sur un cas observé.",pre:["atlas1994a"]},
+melsheimer1998:{a:"Melsheimer, C., Alpers, W. et Gade, M.",short:"Melsheimer et al. (1998)",y:1998,t:"Investigation of multifrequency/multipolarization radar signatures of rain cells over the ocean using SIR-C/X-SAR data",j:"Journal of Geophysical Research",v:"103(C9)",p:"18867–18884",doi:"10.1029/98JC00779",th:"pluie",
+ q:"Comment la signature d'une cellule de pluie change-t-elle avec la fréquence et la polarisation ?",
+ ap:"Les images de la navette en bandes L, C et X montrent des taches claires et sombres qui dépendent fortement de la fréquence et de la polarisation. Deux origines sont séparées : diffusion et atténuation dans l'atmosphère, modification de la rugosité de surface par les gouttes et les rafales.",
+ g:"Selon la longueur d'onde radar, une zone de pluie est plus claire ou plus sombre que son voisinage.",pre:["atlas1994a","valenzuela1978"]},
+melsheimer2001:{a:"Melsheimer, C., Alpers, W. et Gade, M.",short:"Melsheimer et al. (2001)",y:2001,t:"Simultaneous observations of rain cells over the ocean by the synthetic aperture radar aboard the ERS satellites and by surface-based weather radars",j:"Journal of Geophysical Research",v:"106",p:"",doi:"10.1029/2000JC000263",th:"pluie",
+ q:"Que valent les signatures de pluie en bande C quand on les confronte à des radars météo ?",
+ ap:"En dessous de 50 mm/h, la signature en bande C vient surtout de la surface : impact des gouttes, qui crée des ondes annulaires et de la turbulence sous la surface, et variations locales du vent liées aux courants descendants.",
+ g:"Les signatures varient beaucoup et se confondent facilement avec d'autres phénomènes de méso-échelle.",pre:["melsheimer1998"]},
+contreras2006:{a:"Contreras, R. F. et Plant, W. J.",short:"Contreras et Plant (2006)",y:2006,t:"Surface effect of rain on microwave backscatter from the ocean: Measurements and modeling",j:"Journal of Geophysical Research",v:"111(C8)",p:"C08019",doi:"10.1029/2005JC003356",th:"pluie",
+ q:"Peut-on modéliser physiquement l'effet de la pluie sur la rétrodiffusion ?",
+ ap:"Construit un modèle de spectre de surface modifié par la pluie, couplé à un modèle de diffusion multi-échelles, validé en bande Ku. Les simulations en bande C donnent une rétrodiffusion augmentée aux incidences moyennes et fortes, sensible à l'amortissement dû à la pluie.",
+ g:"La validation porte sur la bande Ku. Les bandes C et L sont simulées sans la contribution des éclaboussures.",pre:["melsheimer2001"]},
+alpers2016:{a:"Alpers, W., Zhang, B., Mouche, A., Zeng, K. et Chan, P. W.",short:"Alpers et al. (2016)",y:2016,t:"Rain footprints on C-band synthetic aperture radar images of the ocean - Revisited",j:"Remote Sensing of Environment",v:"187",p:"",doi:"10.1016/j.rse.2016.10.015",th:"pluie",
+ q:"Quel mécanisme physique explique les signatures de pluie en bande C ?",
+ ap:"Reprend les expériences historiques puis des images Envisat, Sentinel-1A et Radarsat-2 comparées à des radars météo. À taux de pluie faible à moyen, le mécanisme principal est la diffusion de Bragg sur les ondes annulaires. Une décomposition polarimétrique confirme une diffusion de surface.",
+ g:"La pluie peut augmenter ou diminuer la rétrodiffusion en bande C. Sans motif de courant descendant, l'identification reste difficile.",pre:["melsheimer2001","contreras2006"]},
+colin2022:{a:"Colin, A., Fablet, R., Tandeo, P., Husson, R., Peureux, C., Longépé, N. et Mouche, A.",short:"Colin et al. (2022)",y:2022,t:"Semantic segmentation of metoceanic processes using SAR observations and deep learning",j:"Remote Sensing",v:"14(4)",p:"851",doi:"10.3390/rs14040851",th:"methodes",
+ q:"Peut-on localiser plusieurs phénomènes dans une même image SAR plutôt que lui donner une seule étiquette ?",
+ ap:"Applique la segmentation sémantique par apprentissage profond aux processus météo-océaniques observés par SAR : chaque zone de l'image reçoit sa classe.",
+ g:"Fiche rédigée à partir du titre et des citations de l'article : à compléter après lecture.",pre:["wang2019"]},
+colin2024:{a:"Colin, A., Tandeo, P., Peureux, C., Husson, R., Longépé, N. et Fablet, R.",short:"Colin et al. (2024)",y:2024,t:"Rain regime segmentation of Sentinel-1 observation learning from NEXRAD collocations with convolution neural networks",j:"IEEE Transactions on Geoscience and Remote Sensing",v:"",p:"",doi:"10.1109/TGRS.2024.3353311",th:"methodes",
+ q:"Un réseau de neurones peut-il cartographier la pluie sur une image Sentinel-1 ?",
+ ap:"Entraîne un réseau convolutif sur des images Sentinel-1 colocalisées avec les radars météo NEXRAD. La sortie distingue trois régimes de pluie, aux seuils de 24,7, 31,5 et 38,8 dBZ, et fait mieux que les filtres de Koch utilisés jusque-là.",
+ g:"Les colocalisations sont en mode IW, près des côtes couvertes par NEXRAD, pas en mode vagues au large.",pre:["alpers2016","wang2019"]}
+};
+const THEMES={pluie:"Pluie",vagues:"Vagues",mission:"Mission et données",methodes:"Méthodes",scattering:"Scattering",separation:"Séparation"};
+
+/* ---------- Branches ---------- */
+const BRANCHES=[
+ {n:1,t:"Physique de l'océan",soon:["Vagues, vent et spectres","Couche limite atmosphérique","Fronts et ondes internes"]},
+ {n:2,t:"Principes radar et SAR",soon:["Rétrodiffusion et géométrie de visée","Synthèse d'ouverture","Speckle et modes Sentinel-1"]},
+ {n:3,t:"Interaction onde-surface",soon:["Diffusion de Bragg et sigma0","Modèles à deux échelles","Déferlement et fonctions géophysiques (CMOD)"]},
+ {n:4,t:"Formation de l'image",soon:["Modulations d'inclinaison et hydrodynamique","Velocity bunching et coupure azimutale","Doppler"]},
+ {n:5,t:"Signatures : pluie et vagues",open:true},
+ {n:6,t:"Scattering et séparation",open:true}
+];
+
+/* ---------- Leçons de la branche 5 ---------- */
+const LESSONS=[
+{id:"l1",t:"La mer vue par un radar",lvl:"Découverte",min:5,scene:["waves",11,{mw:.3}],src:["valenzuela1978"],
+ cards:[
+  {h:"Un radar voit la rugosité",p:[`Un SAR envoie des micro-ondes en visée oblique et mesure la part qui revient vers lui. Cette grandeur s'appelle la section efficace radar normalisée, notée σ⁰.`,`Une mer lisse se comporte comme un miroir : elle renvoie l'onde ailleurs, et l'image est sombre. Une mer rugueuse renvoie de l'énergie vers le radar, et l'image est claire.`]},
+  {h:"La résonance de Bragg",p:[`La rugosité qui compte est très précise. L'onde radar entre en résonance avec les vaguelettes dont la longueur d'onde vaut <b>λ<sub>B</sub> = λ<sub>radar</sub> / (2 sin θ)</b>, où θ est l'angle d'incidence. {{valenzuela1978}} en fait le mécanisme principal de l'interaction entre micro-ondes et surface de la mer.`,`Déplace les curseurs : en bande C, ce sont des vaguelettes de quelques centimètres.`],sim:"bragg"},
+  {h:"Ce que cela implique",p:[`Tout ce qui modifie ces vaguelettes centimétriques laisse une trace sur l'image : le vent, la pluie, les films de surface, les courants, les vagues longues.`,`Les leçons suivantes déclinent cette idée pour les vagues, puis pour la pluie.`]}],
+ ex:[
+  {k:"qcm",q:"Sur une image SAR, une zone de mer très lisse apparaît :",o:["sombre","claire","identique au reste"],why:"Une surface lisse renvoie l'onde dans la direction spéculaire, loin du radar. Presque rien ne revient : la zone est sombre.",src:"valenzuela1978"},
+  {k:"qcm",q:"Bande C (λ = 5,55 cm), incidence 23°. La longueur d'onde de Bragg vaut environ :",o:["7 cm","7 mm","70 cm","7 m"],why:"λ_B = 5,55 / (2 × sin 23°) = 5,55 / 0,78 ≈ 7,1 cm.",src:"valenzuela1978"},
+  {k:"qcm",q:"Quel mécanisme domine la rétrodiffusion micro-onde de la mer aux incidences moyennes ?",o:["La diffusion résonante de Bragg","La réflexion spéculaire","La diffusion dans le volume d'eau","L'émission thermique"],why:"C'est la conclusion de la revue de Valenzuela. Près de la verticale, la réflexion spéculaire reprend le dessus.",src:"valenzuela1978"}]},
+{id:"l2",t:"Sentinel-1 et son mode vagues",lvl:"Découverte",min:4,scene:["waves",23,{mw:.42,a:1.1}],src:["torres2012","wang2019"],
+ cards:[
+  {h:"Une constellation en bande C",p:[`Sentinel-1 est une mission du programme européen Copernicus : des satellites SAR en bande C, à 5,4 GHz, dont les données sont libres et gratuites ({{torres2012}}).`,`L'instrument a quatre modes d'acquisition : IW et EW pour les larges fauchées, SM pour la haute résolution, et WV, le mode vagues.`]},
+  {h:"Des vignettes le long de la trace",p:[`Au large, le satellite n'enregistre pas une bande continue. Il prend de petites images d'environ 20 km de côté, tous les 100 km, en alternant deux angles d'incidence proches de 23° et 36,5°.`,`Ces petites images s'appellent des imagettes ou des vignettes. Le parcours de cette appli reprend ce dessin : une trace au sol, des vignettes de part et d'autre.`]},
+  {h:"Un volume qui impose l'automatisation",p:[`Le mode vagues produit environ 60 000 vignettes par satellite et par mois ({{wang2019}}). Personne ne peut les regarder une à une : c'est la raison d'être des méthodes de classification et de séparation que tu verras en fin de branche.`]}],
+ ex:[
+  {k:"qcm",q:"Dans quelle bande de fréquence Sentinel-1 émet-il ?",o:["Bande C","Bande L","Bande X","Bande Ku"],why:"Sentinel-1 émet à 5,4 GHz, soit une longueur d'onde d'environ 5,5 cm : c'est la bande C.",src:"torres2012"},
+  {k:"qcm",q:"En mode vagues, que reçoit-on au large ?",o:["Des vignettes isolées, espacées le long de la trace","Une bande continue de plusieurs centaines de kilomètres","Une seule image par orbite"],why:"Le mode vagues échantillonne l'océan par petites images séparées, ce qui limite le volume de données tout en couvrant le globe.",src:"torres2012"},
+  {k:"qcm",q:"Ordre de grandeur du nombre de vignettes par satellite et par mois :",o:["60 000","600","6 000","6 millions"],why:"Environ 60 000 par satellite et par mois selon Wang et al.",src:"wang2019"}]},
+{id:"l3",t:"Voir les vagues : la modulation",lvl:"Intermédiaire",min:6,scene:["waves",5,{mw:.5,a:.3}],src:["alpers1981"],
+ cards:[
+  {h:"Le problème des deux échelles",p:[`La houle mesure 100 à 300 m. Les vaguelettes de Bragg mesurent quelques centimètres. Le radar ne répond pas directement à la houle : il répond aux vaguelettes, et la houle se voit parce qu'elle les module.`,`C'est le modèle à deux échelles, que {{alpers1981}} utilisent pour calculer des fonctions de transfert linéaires entre le champ de vagues et l'image d'un radar à ouverture réelle.`]},
+  {h:"Deux façons de moduler",p:[`<b>L'inclinaison.</b> La pente de la houle change l'angle d'incidence local, donc σ⁰. La face tournée vers le radar est plus claire. L'effet est le plus fort pour des vagues qui se propagent en distance, c'est-à-dire perpendiculairement à la trace du satellite.`,`<b>L'hydrodynamique.</b> Les courants orbitaux de la houle resserrent les vaguelettes à certains endroits du profil et les étirent ailleurs.`]},
+  {h:"Et pour un SAR ?",p:[`Ces deux modulations existent aussi pour un SAR. Mais un SAR ajoute un troisième mécanisme, lié au mouvement de la surface, qui domine souvent. C'est l'objet de la leçon suivante.`]}],
+ ex:[
+  {k:"qcm",q:"Dans le modèle à deux échelles, qu'est-ce que la houle module ?",o:["Les vaguelettes centimétriques qui rétrodiffusent","La fréquence émise par le radar","La constante diélectrique de l'eau"],why:"Les vagues longues changent l'inclinaison et la densité des vaguelettes de Bragg. Ce sont elles qui renvoient le signal.",src:"alpers1981"},
+  {k:"match",q:"Associe chaque mécanisme à sa description.",pairs:[["Modulation d'inclinaison","La pente locale change l'angle d'incidence"],["Modulation hydrodynamique","Les courants orbitaux redistribuent les vaguelettes"],["Résonance de Bragg","Le radar répond à des vaguelettes de quelques centimètres"]],why:"L'inclinaison est géométrique, l'hydrodynamique est une interaction entre vagues courtes et longues, et Bragg fixe l'échelle des vagues courtes concernées.",src:"alpers1981"},
+  {k:"qcm",q:"La modulation d'inclinaison est la plus forte pour des vagues qui se propagent :",o:["en distance, perpendiculairement à la trace","en azimut, le long de la trace","dans n'importe quelle direction"],why:"Une vague qui se propage en distance présente sa pente au radar. En azimut, la pente est perpendiculaire au plan d'incidence et l'angle local change très peu.",src:"alpers1981"}]},
+{id:"l4",t:"Voir les vagues : le velocity bunching",lvl:"Intermédiaire",min:7,scene:["waves",8,{mw:.45,a:1.57}],src:["alpers1981","hh1991"],
+ cards:[
+  {h:"Le SAR localise par le Doppler",p:[`Pour placer un point en azimut, le SAR utilise l'histoire Doppler de son écho. Si le point se rapproche ou s'éloigne du radar pendant la mesure, son Doppler est décalé et le SAR le place au mauvais endroit.`,`Le décalage vaut <b>Δx ≈ (R/V) · u<sub>r</sub></b> : R est la distance radar-cible, V la vitesse du satellite, u<sub>r</sub> la vitesse radiale de la cible. Pour un satellite en orbite basse comme Sentinel-1, R/V est de l'ordre de 100 s (altitude d'environ 700 km, vitesse d'environ 7,5 km/s).`]},
+  {h:"Des diffuseurs tassés puis étirés",p:[`Sous une houle, la vitesse orbitale de l'eau change de signe le long de la vague. Les diffuseurs sont donc décalés dans un sens puis dans l'autre : ils se tassent à certains endroits et s'écartent ailleurs. L'image montre des bandes claires et sombres, même sans aucune modulation de σ⁰.`,`{{alpers1981}} décrivent ce mécanisme comme un artefact propre au SAR. La vitesse de phase de la houle n'y joue aucun rôle : seules comptent la vitesse et l'accélération orbitales.`],sim:"bunch"},
+  {h:"Linéaire, puis plus du tout",p:[`Tant que les décalages restent petits devant la longueur d'onde, l'image est proportionnelle à la vague. Quand ils deviennent comparables, les diffuseurs se croisent et la relation devient non linéaire. {{hh1991}} en donnent la formulation spectrale complète.`]}],
+ ex:[
+  {k:"qcm",q:"R/V = 100 s et vitesse radiale de 0,5 m/s. Le décalage en azimut vaut environ :",o:["50 m","5 m","500 m","0,5 m"],why:"Δx = (R/V) × u_r = 100 × 0,5 = 50 m. C'est plusieurs pixels pour une vitesse pourtant modeste.",src:"alpers1981"},
+  {k:"qcm",q:"Selon Alpers et al. (1981), quelle grandeur des vagues longues n'intervient pas dans la formation de l'image SAR ?",o:["La vitesse de phase","La vitesse orbitale","L'accélération orbitale"],why:"Le SAR est sensible au mouvement des diffuseurs, donc aux vitesses et accélérations orbitales, pas à la vitesse à laquelle la forme de la vague se déplace.",src:"alpers1981"},
+  {k:"qcm",q:"Un radar à ouverture réelle subit-il le velocity bunching ?",o:["Non, c'est propre au SAR","Oui, de la même façon","Oui, mais en distance"],why:"Le mécanisme vient de la localisation azimutale par le Doppler, que seul le SAR utilise.",src:"alpers1981"}]},
+{id:"l5",t:"La coupure azimutale",lvl:"Avancé",min:8,scene:["waves",14,{mw:.2,a:1.2}],src:["hh1991","kerbaol1998","stopa2017"],
+ cards:[
+  {h:"Un flou qui ne touche que l'azimut",p:[`Les vagues courtes, non résolues, ont elles aussi des vitesses orbitales. Elles décalent les diffuseurs de façon désordonnée : l'image est floutée dans la direction azimutale.`,`Dans l'approximation quasi linéaire de {{hh1991}}, le spectre de l'image est le spectre linéaire multiplié par un facteur gaussien <b>exp(−k<sub>az</sub>² ξ²)</b>, où ξ est le déplacement azimutal quadratique moyen.`],sim:"cutoff"},
+  {h:"De l'information perdue",p:[`Les vagues courtes qui se propagent en azimut disparaissent de l'image. S'y ajoute une ambiguïté de 180° sur la direction de propagation. Pour retrouver le spectre de vagues, l'inversion de {{hh1991}} part donc d'un spectre a priori.`]},
+  {h:"Un défaut devenu une mesure",p:[`Plus la mer est agitée, plus ξ est grand. La coupure renseigne donc sur l'état de mer. {{kerbaol1998}} l'étudient sur plus de 2000 imagettes ERS, en regard du vent mesuré par le diffusiomètre.`,`Sur Sentinel-1, {{stopa2017}} utilisent la coupure azimutale, avec d'autres paramètres, pour estimer la hauteur significative des vagues.`]}],
+ ex:[
+  {k:"qcm",q:"Quelle direction de propagation souffre le plus de la coupure ?",o:["L'azimut","La distance","Toutes de la même façon"],why:"Le facteur de coupure dépend du nombre d'onde azimutal. Une vague qui se propage en distance a un nombre d'onde azimutal nul et n'est pas atténuée.",src:"hh1991"},
+  {k:"order",q:"Remets la chaîne causale dans l'ordre.",items:["Les vagues courtes ont des vitesses orbitales désordonnées","Les échos subissent des décalages Doppler aléatoires","Les positions sont floutées en azimut","Les courtes longueurs d'onde azimutales disparaissent de l'image"],why:"Le flou vient du mouvement, passe par le Doppler et se termine en perte de résolution azimutale.",src:"hh1991"},
+  {k:"qcm",q:"Pourquoi l'inversion de Hasselmann et Hasselmann part-elle d'un spectre a priori ?",o:["Pour lever l'ambiguïté de 180° et combler l'information perdue au-delà de la coupure","Pour corriger le speckle","Pour étalonner σ⁰"],why:"Le spectre d'image ne contient ni le sens de propagation ni les vagues au-delà de la coupure. Il faut les prendre ailleurs.",src:"hh1991"},
+  {k:"qcm",q:"La mer forcit. Que fait la longueur d'onde de coupure ?",o:["Elle augmente","Elle diminue","Elle ne change pas"],why:"Des vitesses orbitales plus fortes donnent des déplacements plus grands, donc un flou plus large : on perd des vagues plus longues.",src:"kerbaol1998"}]},
+{id:"l6",t:"Anatomie d'une cellule de pluie",lvl:"Découverte",min:5,scene:["rain",3,{d:.85,rw:0,g:.9}],src:["atlas1994a","atlas1994b"],
+ cards:[
+  {h:"Une averse et un courant descendant",p:[`Une cellule convective, c'est une averse intense accompagnée d'un courant d'air descendant. En touchant la mer, cet air s'étale dans toutes les directions jusqu'à une limite nette : le front de rafale.`]},
+  {h:"L'empreinte vue par Seasat",p:[`En 1978, le SAR de Seasat montre des motifs en forme d'orage sur la mer. {{atlas1994a}} en propose la lecture : au centre, un trou sans écho sous le cœur de pluie. Autour, des échos renforcés par le vent qui diverge. Au bord, une limite franche, le front de rafale. L'ensemble reproduit les traits d'une microrafale.`],fig:["rain",3,{d:.85,rw:0,g:.9}],cap:"Illustration synthétique, pas une image satellite : trou central, zone brillante et bord net."},
+  {h:"La confirmation",p:[`La même année, {{atlas1994b}} s'appuie sur un radar météorologique côtier. Le trou sans écho correspond bien à la pluie, qui amortit les vagues. La zone brillante correspond à la divergence du courant descendant.`,`Seasat observait en bande L. En bande C, le cœur de la cellule n'est pas toujours sombre : c'est le sujet des deux leçons suivantes.`]}],
+ ex:[
+  {k:"qcm",q:"Que montre cette vignette synthétique ?",scene:["rain",9,{d:.85,rw:0,g:.9}],o:["Une cellule de pluie","De la houle seule","Une zone de vent faible","Un front atmosphérique"],why:"On retrouve les trois éléments décrits par Atlas : un cœur sombre, une zone brillante d'un côté et un bord net.",src:"atlas1994a"},
+  {k:"match",q:"Associe chaque partie de l'empreinte à sa cause.",pairs:[["Trou sombre au centre","La pluie amortit les vagues"],["Zone brillante autour","Le vent diverge depuis le courant descendant"],["Bord net","Le front de rafale"]],why:"C'est la lecture proposée par Atlas en 1994 et confirmée par un radar météo côtier.",src:"atlas1994b"},
+  {k:"qcm",q:"Quel satellite a montré ces empreintes le premier, en 1978 ?",o:["Seasat","ERS-1","Envisat","Sentinel-1"],why:"Seasat, premier SAR civil en orbite, a fonctionné quelques mois en 1978.",src:"atlas1994a"}]},
+{id:"l7",t:"Ce que la pluie fait à la surface",lvl:"Intermédiaire",min:7,scene:["rain",17,{d:.5,rw:.9,g:.5}],src:["melsheimer1998","melsheimer2001","contreras2006"],
+ cards:[
+  {h:"Deux familles d'effets",p:[`{{melsheimer1998}} séparent deux origines. Dans l'atmosphère, les gouttes et les particules de glace diffusent et atténuent les micro-ondes. À la surface, l'impact des gouttes et les rafales modifient la rugosité.`,`{{melsheimer2001}} précisent le cas de la bande C : en dessous de 50 mm/h, c'est la surface qui explique l'essentiel de la signature.`]},
+  {h:"Deux effets de surface opposés",p:[`Chaque goutte crée des <b>ondes annulaires</b>, de petits cercles qui s'élargissent. Elles ajoutent de la rugosité centimétrique.`,`La pluie crée aussi de la <b>turbulence sous la surface</b>, qui amortit les vagues courtes.`,`Le résultat dépend de la longueur d'onde radar. Les ondes annulaires renforcent les vaguelettes vues en bande X. L'amortissement touche surtout les vagues plus longues vues en bande L. La bande C est entre les deux.`],sim:"rain"},
+  {h:"Ce que dit la modélisation",p:[`{{contreras2006}} construisent un spectre de surface modifié par la pluie et le couplent à un modèle de diffusion. En bande C, la rétrodiffusion augmente aux incidences moyennes et fortes, et reste sensible à l'amortissement. En bande L, elle diminue quand la pluie est forte.`]}],
+ ex:[
+  {k:"match",q:"Associe chaque effet de la pluie à sa conséquence.",pairs:[["Ondes annulaires","Plus de rugosité centimétrique"],["Turbulence sous la surface","Vagues courtes amorties"],["Gouttes dans l'atmosphère","Signal diffusé et atténué en vol"]],why:"Les deux premiers effets agissent sur la surface et s'opposent. Le troisième agit sur le trajet de l'onde.",src:"melsheimer2001"},
+  {k:"qcm",q:"Selon Melsheimer et al. (2001), en dessous de 50 mm/h, la signature en bande C vient surtout :",o:["de la modification de la rugosité de surface","de la diffusion par les gouttes en altitude","d'un changement de température de l'eau"],why:"Impact des gouttes et variations locales du vent : les deux agissent sur la rugosité.",src:"melsheimer2001"},
+  {k:"qcm",q:"Dans quelle bande la pluie tend-elle le plus à assombrir l'image ?",o:["Bande L","Bande C","Bande X"],why:"Les vagues de Bragg de la bande L, plus longues, sont surtout amorties. C'est le trou sans écho de Seasat.",src:"contreras2006"}]},
+{id:"l8",t:"Bande C : pourquoi c'est ambigu",lvl:"Avancé",min:7,scene:["rain",21,{d:.35,rw:1.1,g:.35}],src:["alpers2016","melsheimer2001"],
+ cards:[
+  {h:"Clair ou sombre, selon les cas",p:[`{{alpers2016}} reprennent la question avec des images Envisat, Sentinel-1A et Radarsat-2 comparées à des radars météo. En bande C, la pluie peut augmenter ou diminuer la rétrodiffusion. Les signatures sont plus complexes qu'en bande L ou X.`]},
+  {h:"Le mécanisme retenu",p:[`À taux de pluie faible à moyen, le mécanisme principal est la diffusion de Bragg sur les ondes annulaires, qui augmente la rétrodiffusion. Une décomposition polarimétrique d'une image Radarsat-2 confirme qu'il s'agit de diffusion de surface.`,`Certaines portions de cellules montrent une forte hausse en co-polarisation et en polarisation croisée à la fois. Les auteurs y voient des contributions qui ne relèvent pas de Bragg.`]},
+  {h:"Quand la détection est facile, et quand elle ne l'est pas",p:[`Une cellule accompagnée d'un motif de courant descendant se repère à toutes les fréquences. Mais la pluie prend d'autres formes : pluie stratiforme, bandes, lignes de grains. Sans ce motif, {{alpers2016}} jugent l'identification en bande C particulièrement difficile, et {{melsheimer2001}} notaient déjà la confusion avec d'autres phénomènes de méso-échelle.`,`Sur une vignette du mode vagues, la pluie se superpose en plus à la houle. Aucune règle simple du type « sombre égale pluie » ne tient : il faut des méthodes statistiques.`]}],
+ ex:[
+  {k:"qcm",q:"« En bande C, une cellule de pluie est toujours plus sombre que son voisinage. »",o:["Faux : elle peut être plus claire ou plus sombre","Vrai","Vrai, sauf la nuit"],why:"Ondes annulaires et amortissement s'opposent. Le signe du contraste dépend du taux de pluie, du vent et de l'incidence.",src:"alpers2016"},
+  {k:"qcm",q:"Selon Alpers et al. (2016), quel mécanisme domine en bande C à taux de pluie faible à moyen ?",o:["La diffusion de Bragg sur les ondes annulaires","La diffusion de volume par les gouttes","La réflexion spéculaire","L'atténuation atmosphérique"],why:"La décomposition polarimétrique pointe vers une diffusion de surface, et les ondes annulaires fournissent la rugosité à la bonne échelle.",src:"alpers2016"},
+  {k:"qcm",q:"Quel indice rend une cellule de pluie facile à repérer à toutes les fréquences ?",o:["Un motif de courant descendant","Sa taille","Sa position par rapport à la côte"],why:"Le vent qui diverge et le front de rafale dessinent une forme reconnaissable, indépendante de l'effet des gouttes.",src:"alpers2016"},
+  {k:"order",q:"Classe ces travaux du plus ancien au plus récent.",items:["Atlas : empreintes d'orages vues par Seasat","Melsheimer et al. : navette, trois fréquences","Melsheimer et al. : ERS et radars météo","Contreras et Plant : modèle de surface sous la pluie","Alpers et al. : la bande C revisitée"],why:"1994, 1998, 2001, 2006, 2016 : de l'observation d'un cas à la comparaison systématique, puis au modèle et à la synthèse.",src:"alpers2016"}]},
+{id:"l9",t:"Reconnaître dix signatures",lvl:"Intermédiaire",min:6,scene:["streaks",4,{}],src:["wang2019","colin2022"],
+ cards:[
+  {h:"Un jeu de données étiqueté",p:[`{{wang2019}} publient TenGeoP-SARwv : plus de 37 000 vignettes Sentinel-1A de 2016, choisies et étiquetées à la main. Chaque vignette porte une seule étiquette, celle du phénomène dominant.`]},
+  {h:"Les dix classes",p:[`Houle pure, traînées de vent, micro-cellules convectives, cellules de pluie, films biologiques, glace de mer, icebergs, zones de vent faible, fronts atmosphériques, fronts océaniques.`,`Voici cinq d'entre elles en version synthétique, pour fixer les formes.`],sim:"gallery"},
+  {h:"La limite d'une seule étiquette",p:[`Dans une vraie vignette, les phénomènes se superposent : une cellule de pluie sur un champ de houle, un front qui traverse des traînées de vent. Une étiquette par image ne le dit pas.`,`{{colin2022}} passent à la segmentation : une classe par zone de l'image. La séparation de composantes va plus loin et cherche la part de chaque phénomène dans le signal.`]}],
+ ex:[
+  {k:"qcm",q:"Quelle classe reconnais-tu ?",scene:["waves",31,{mw:.5,a:.7}],o:["Houle pure","Traînées de vent","Zone de vent faible","Cellule de pluie"],why:"Des crêtes régulières, parallèles, de longueur d'onde constante sur toute la vignette.",src:"wang2019"},
+  {k:"qcm",q:"Et celle-ci ?",scene:["streaks",12,{}],o:["Traînées de vent","Houle pure","Front atmosphérique","Zone de vent faible"],why:"Des bandes allongées, irrégulières, de largeur variable et alignées avec le vent : rien de périodique comme la houle.",src:"wang2019"},
+  {k:"qcm",q:"Et celle-là ?",scene:["lowwind",6,{}],o:["Zone de vent faible","Cellule de pluie","Houle pure","Front océanique"],why:"De grandes plages très sombres aux contours nets : sans vent, plus de vaguelettes de Bragg et presque plus d'écho.",src:"wang2019"},
+  {k:"qcm",q:"Combien d'étiquettes porte une vignette de TenGeoP-SARwv ?",o:["Une seule, le phénomène dominant","Autant que de phénomènes visibles","Une par pixel"],why:"C'est un jeu de classification d'images. La description par zone vient avec les travaux de segmentation.",src:"wang2019"}]},
+{id:"l10",t:"Détecter la pluie automatiquement",lvl:"Avancé",min:6,scene:["front",2,{}],src:["colin2024","colin2022","alpers2016"],
+ cards:[
+  {h:"Apprendre avec des radars météo",p:[`Pour entraîner un détecteur, il faut une vérité terrain. {{colin2024}} la prennent dans le réseau américain de radars météorologiques NEXRAD, colocalisé avec des images Sentinel-1.`,`Le réseau convolutif produit une carte en trois régimes de pluie, définis par des seuils de réflectivité de 24,7, 31,5 et 38,8 dBZ. Il fait mieux que les filtres de Koch, la méthode classique, qui ne donnent qu'une carte binaire.`]},
+  {h:"Ce que cela ne résout pas",p:[`Les colocalisations sont en mode IW, près des côtes couvertes par NEXRAD. Le mode vagues, au large, n'a pas cette vérité terrain.`,`Et une carte de pluie dit où se trouve la pluie. Elle ne dit pas à quoi ressemblerait la houle sans elle.`]},
+  {h:"De la détection à la séparation",p:[`Segmenter, c'est attribuer une classe à chaque zone. Séparer, c'est estimer la contribution de chaque phénomène au signal mesuré : écrire l'image comme une somme de composantes et retrouver chacune.`,`C'est l'objet de la branche 6, à venir : statistiques de scattering, séparation de composantes, a priori appris.`]}],
+ ex:[
+  {k:"qcm",q:"Quelle vérité terrain Colin et al. (2024) utilisent-ils ?",o:["Les radars météorologiques au sol NEXRAD","Des bouées","Des altimètres","Des étiquettes posées à la main"],why:"NEXRAD fournit une réflectivité liée à la pluie, à une résolution compatible avec celle du SAR.",src:"colin2024"},
+  {k:"qcm",q:"Combien de régimes de pluie le réseau distingue-t-il ?",o:["Trois","Deux","Dix"],why:"Trois classes, séparées par les seuils de 24,7, 31,5 et 38,8 dBZ.",src:"colin2024"},
+  {k:"qcm",q:"Quelle phrase distingue correctement segmentation et séparation ?",o:["La segmentation classe chaque zone, la séparation estime la part de chaque phénomène dans le signal","La segmentation est plus précise que la séparation","Les deux mots désignent la même opération"],why:"Une zone classée « pluie » contient toujours de la houle. La séparation cherche à retrouver les deux.",src:"colin2022"}]}
+];
+
+const PATHS=[
+ {t:"La pluie, de Seasat aux réseaux de neurones",ids:["atlas1994a","atlas1994b","melsheimer1998","melsheimer2001","contreras2006","alpers2016","colin2024"]},
+ {t:"L'imagerie des vagues",ids:["valenzuela1978","alpers1981","hh1991","kerbaol1998","stopa2017"]},
+ {t:"Le mode vagues et ses données",ids:["torres2012","wang2019","colin2022"]}
+];
+const SYNTH=[
+ {t:"La pluie en SAR bande C : trente ans d'idées",p:[
+  `<b>Le point de départ.</b> Les empreintes d'orages vues par Seasat reçoivent une explication d'ensemble avec {{atlas1994a}} : un trou sans écho, une zone brillante, un front de rafale. {{atlas1994b}} la confirme avec un radar météo côtier.`,
+  `<b>La dépendance en fréquence.</b> Les images de la navette montrent que la même cellule change d'aspect entre les bandes L, C et X ({{melsheimer1998}}). L'explication tient en deux effets de surface opposés, les ondes annulaires et l'amortissement par la turbulence, auxquels s'ajoutent les effets atmosphériques ({{melsheimer2001}}).`,
+  `<b>Le modèle.</b> {{contreras2006}} traduisent ces effets dans un spectre de surface modifié par la pluie et retrouvent une bande C renforcée aux incidences moyennes et fortes.`,
+  `<b>Ce qui fait consensus.</b> En bande C, la signature vient surtout de la surface. À taux de pluie faible à moyen, la diffusion de Bragg sur les ondes annulaires domine ({{alpers2016}}).`,
+  `<b>Ce qui reste ouvert.</b> Le signe du contraste n'est pas prévisible simplement. Les fortes hausses simultanées en co-polarisation et en polarisation croisée pointent vers des contributions hors Bragg. Sans motif de courant descendant, l'identification reste difficile, ce qui motive les approches par apprentissage ({{colin2024}}).`]},
+ {t:"Des vagues à l'image : trois mécanismes et une coupure",p:[
+  `<b>La base.</b> La mer renvoie les micro-ondes par résonance de Bragg sur des vaguelettes centimétriques ({{valenzuela1978}}).`,
+  `<b>Trois mécanismes.</b> Les vagues longues deviennent visibles par la modulation d'inclinaison, la modulation hydrodynamique et, pour le SAR seulement, le velocity bunching ({{alpers1981}}).`,
+  `<b>La théorie spectrale.</b> {{hh1991}} relient le spectre de vagues au spectre d'image par une transformée non linéaire, dont l'approximation quasi linéaire contient un facteur gaussien de coupure azimutale.`,
+  `<b>L'usage.</b> La coupure, d'abord subie, devient une mesure de l'état de mer ({{kerbaol1998}}) puis un ingrédient des estimations de hauteur significative sur Sentinel-1 ({{stopa2017}}).`]}
+];
+
+const B6=window.B6||{refs:{},lessons:[],paths:[],synth:[]};
+Object.assign(REFS,B6.refs);PATHS.push(...B6.paths);SYNTH.push(...B6.synth);
+const BR={5:LESSONS,6:B6.lessons},ALL=[...LESSONS,...B6.lessons];
+/* ---------- État et sauvegarde ---------- */
+const IV=[0,1,3,7,16,35];
+const today=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*6e4)/864e5);
+const blank=()=>({xp:0,done:{},items:{},last:0,streak:0,ob:5,best:{},qz:0});
+let S=blank(), cloud=null, cloudBusy=false, cloudDirty=false, syncMsg="Ta progression est enregistrée sur cet appareil.";
+function norm(d){const s=blank();try{d=JSON.parse(JSON.stringify(d))}catch(e){d=null}if(d&&typeof d==="object"){s.xp=+d.xp||0;s.done=d.done&&typeof d.done==="object"?d.done:{};s.items=d.items&&typeof d.items==="object"?d.items:{};s.last=+d.last||0;s.streak=+d.streak||0;s.ob=d.ob===6?6:5;s.best=d.best&&typeof d.best==="object"?d.best:{};s.qz=+d.qz||0}return s}
+function localLoad(){try{const r=localStorage.getItem("imagette.v1");if(r)S=norm(JSON.parse(r))}catch(e){}}
+function localSave(){try{localStorage.setItem("imagette.v1",JSON.stringify(S))}catch(e){}}
+async function pushCloud(){if(!cloud)return;if(cloudBusy){cloudDirty=true;return}cloudBusy=true;try{await cloud.set(JSON.parse(JSON.stringify(S)))}catch(e){}cloudBusy=false;if(cloudDirty){cloudDirty=false;pushCloud()}}
+function save(){localSave();pushCloud()}
+async function initCloud(){
+  try{
+    if(!window.claude||!window.claude.use)return;
+    const [db,user]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);
+    if(!db||!user)return;
+    const id=await user.id(); if(!id)return;
+    const ref=db.collection("data/users/"+id).doc("progress");
+    const snap=await ref.get();
+    let d=null;
+    if(snap){d=typeof snap.data==="function"?snap.data():(snap.data!==undefined?snap.data:snap)}
+    cloud=ref;
+    if(d&&typeof d==="object"&&typeof d.xp==="number"&&d.xp>=S.xp){S=norm(d);localSave();branch=S.ob}
+    else if(S.xp>0)pushCloud();
+    syncMsg="Ta progression est enregistrée sur ton compte et te suit d'un appareil à l'autre.";
+    if(!P)render(); else setSync();
+  }catch(e){}
+}
+function setSync(){document.getElementById("sync").textContent=syncMsg+" Contenu rédigé à partir des résumés publiés des articles : chaque lien mène à la source."}
+function touchStreak(){const t=today();if(S.last===t)return;S.streak=(S.last===t-1)?S.streak+1:1;S.last=t}
+
+/* ---------- Outils ---------- */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cite=id=>{const r=REFS[id];return r?`<a class="cite" href="https://doi.org/${r.doi}" target="_blank" rel="noopener">${esc(r.short)}</a>`:""};
+const rich=s=>s.replace(/\{\{(\w+)\}\}/g,(m,id)=>cite(id));
+function rng(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(arr,r){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const dueItems=()=>Object.keys(S.items).filter(id=>S.items[id].due<=today());
+const cur=()=>BR[S.ob]||LESSONS;
+const lessonOpen=i=>i===0||!!S.done[cur()[i-1].id];
+const doneCount=()=>cur().filter(l=>S.done[l.id]).length;
+const unlockedRefs=()=>{const u=new Set();ALL.forEach(l=>{if(S.done[l.id])l.src.forEach(x=>u.add(x))});return u};
+function findEx(id){const [lid,k]=id.split(".");const l=ALL.find(x=>x.id===lid);return l&&l.ex[+k]?{ex:l.ex[+k],id,lesson:l}:null}
+
+/* ---------- Vignettes synthétiques ---------- */
+function mkField(type,seed,p){
+  p=p||{};const r=rng(seed*7919+13);
+  const a=p.a!==undefined?p.a:r()*Math.PI, lw=p.lw||.075+.03*r();
+  let mw=p.mw!==undefined?p.mw:.3;
+  if(p.mw===undefined){if(type==="rain")mw=.22;if(type==="streaks")mw=.1;if(type==="lowwind"||type==="front")mw=.2}
+  if(type==="cells")mw=0;
+  const ca=Math.cos(a),sa=Math.sin(a);
+  const lf=[];for(let i=0;i<5;i++){const t=r()*Math.PI*2,l=.35+.5*r();lf.push([Math.cos(t)/l,Math.sin(t)/l,r()*6.28])}
+  const st=[];const b=r()*Math.PI;for(let i=0;i<4;i++)st.push([.05+.05*i+.02*r(),r()*6.28]);
+  const cx=.42+.16*r(),cy=.42+.16*r(),ph0=r()*6.28,fph=r()*6.28;
+  const d=p.d!==undefined?p.d:.8, rw=p.rw!==undefined?p.rw:0, g=p.g!==undefined?p.g:.8;
+  const f=(x,y)=>{
+    let f=1+mw*Math.cos(6.2832*(x*ca+y*sa)/lw);
+    if(type==="rain"){
+      const dx=x-cx,dy=y-cy,rr=Math.hypot(dx,dy),ph=Math.atan2(dy,dx);
+      const hole=Math.exp(-rr*rr/(2*.085*.085)),wide=Math.exp(-rr*rr/(2*.13*.13));
+      const dir=Math.max(0,Math.cos(ph-ph0));
+      const ring=Math.exp(-Math.pow((rr-.3)/.03,2))*Math.pow(dir,.6);
+      const inner=rr<.3?.55*(rr/.3)*dir:0;
+      f*=Math.max(.04,1-d*hole+rw*wide)*(1+g*(1.3*ring+inner));
+    }else if(type==="streaks"){
+      const u=x*Math.cos(b)+y*Math.sin(b);let s=0;for(const q of st)s+=Math.sin(6.2832*u/q[0]+q[1]);
+      const n=Math.sin(6.2832*(x*lf[0][0]+y*lf[0][1])+lf[0][2]);
+      f*=1+.2*s*(1+.3*n);
+    }else if(type==="lowwind"||type==="cells"){
+      let n=0;for(const q of lf)n+=Math.sin(6.2832*(x*q[0]+y*q[1])+q[2]);n/=2.2;
+      const sg=1/(1+Math.exp(-(n-.05)*22));f*=.07+.93*sg;
+    }else if(type==="front"){
+      const line=.5+.09*Math.sin(6.2832*y*1.2+fph)+.03*Math.sin(6.2832*y*3.1);
+      const sg=1/(1+Math.exp(-(x-line)*60));f*=.55+.8*sg;
+    }
+    return f};
+  return {f,r};
+}
+function fft1(re,im,inv){const n=re.length;
+  for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b>>=1)j^=b;j^=b;if(i<j){let t=re[i];re[i]=re[j];re[j]=t;t=im[i];im[i]=im[j];im[j]=t}}
+  for(let len=2;len<=n;len<<=1){const ang=(inv?2:-2)*Math.PI/len,wr=Math.cos(ang),wi=Math.sin(ang);
+    for(let i=0;i<n;i+=len){let cr=1,ci=0;for(let k=0;k<len/2;k++){const a=i+k,b=a+len/2,xr=re[b]*cr-im[b]*ci,xi=re[b]*ci+im[b]*cr;re[b]=re[a]-xr;im[b]=im[a]-xi;re[a]+=xr;im[a]+=xi;const t=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=t}}}
+  if(inv)for(let i=0;i<n;i++){re[i]/=n;im[i]/=n}}
+function fft2(re,im,N,inv){const r=new Float64Array(N),q=new Float64Array(N);
+  for(let y=0;y<N;y++){for(let x=0;x<N;x++){r[x]=re[y*N+x];q[x]=im[y*N+x]}fft1(r,q,inv);for(let x=0;x<N;x++){re[y*N+x]=r[x];im[y*N+x]=q[x]}}
+  for(let x=0;x<N;x++){for(let y=0;y<N;y++){r[y]=re[y*N+x];q[y]=im[y*N+x]}fft1(r,q,inv);for(let y=0;y<N;y++){re[y*N+x]=r[y];im[y*N+x]=q[y]}}}
+const kf=(i,N)=>(i<N/2?i:i-N)*2*Math.PI/N;
+function unit(a){let s=0;for(let i=0;i<a.length;i++)s+=a[i];s/=a.length;let v=0;for(let i=0;i<a.length;i++){a[i]-=s;v+=a[i]*a[i]}v=Math.sqrt(v/a.length)||1;for(let i=0;i<a.length;i++)a[i]/=v;return a}
+function grf(N,beta,seed){const r=rng(seed*31+7),re=new Float64Array(N*N),im=new Float64Array(N*N);
+  for(let i=0;i<N*N;i++)re[i]=r()+r()+r()-1.5;fft2(re,im,N,false);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const k=Math.hypot(kf(x,N),kf(y,N)),g=k?Math.pow(k,-beta/2):0;re[y*N+x]*=g;im[y*N+x]*=g}
+  fft2(re,im,N,true);return unit(re)}
+function sample(type,seed,p,N){const m=mkField(type,seed,p),a=new Float64Array(N*N);for(let j=0;j<N;j++)for(let i=0;i<N;i++)a[j*N+i]=m.f(i/N,j/N);return unit(a)}
+function showArr(ctx,a,N,x0,gain){const img=ctx.createImageData(N,N),g=gain||55;
+  for(let i=0;i<N*N;i++){const v=Math.max(0,Math.min(255,128+g*a[i]));img.data[4*i]=img.data[4*i+1]=img.data[4*i+2]=v;img.data[4*i+3]=255}
+  ctx.putImageData(img,x0||0,0)}
+function drawScene(cv,type,seed,p){
+  p=p||{};const N=cv.width,ctx=cv.getContext("2d");
+  if(type==="grf")return showArr(ctx,grf(N,p.beta||2,seed),N,0);
+  if(type==="cells")return showArr(ctx,sample(type,seed,p,N),N,0,70);
+  const m=mkField(type,seed,p),r=m.r,img=ctx.createImageData(N,N);
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+    const f=m.f(i/N,j/N),sp=-(Math.log(r()+1e-9)+Math.log(r()+1e-9)+Math.log(r()+1e-9))/3;
+    const v=255*Math.pow(Math.min(1,.3*Math.max(0,f)*sp),.7),k=4*(j*N+i);
+    img.data[k]=img.data[k+1]=img.data[k+2]=v;img.data[k+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+}
+function sceneTag(s,cls,size){if(s[0]==="grf")size=(size||200)>=120?128:64;return `<canvas class="${cls||"scene"}" width="${size||200}" height="${size||200}" data-scene="${s[0]}" data-seed="${s[1]}" data-p='${JSON.stringify(s[2]||{})}' role="img" aria-label="Vignette synthétique"></canvas>`}
+function paintScenes(root){root.querySelectorAll("canvas[data-scene]").forEach(c=>drawScene(c,c.dataset.scene,+c.dataset.seed,JSON.parse(c.dataset.p||"{}")))}
+
+/* ---------- Simulateurs ---------- */
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function simHTML(k){
+  if(k==="bragg")return `<div class="sim" data-sim="bragg">
+   <label for="s-band">Bande radar<select id="s-band"><option value="23.5">L · 23,5 cm</option><option value="5.55" selected>C · 5,55 cm</option><option value="3.1">X · 3,1 cm</option></select><output></output></label>
+   <label for="s-inc">Angle d'incidence<input id="s-inc" type="range" min="20" max="45" step="0.5" value="23"><output id="o-inc"></output></label>
+   <canvas id="s-cv" width="600" height="80"></canvas><p class="read" id="s-read"></p>
+   <p class="cap">Les deux incidences du mode vagues de Sentinel-1 sont proches de 23° et 36,5°.</p></div>`;
+  if(k==="bunch")return `<div class="sim" data-sim="bunch">
+   <label for="s-u">Vitesse orbitale<input id="s-u" type="range" min="0" max="1.5" step="0.05" value="0.3"><output id="o-u"></output></label>
+   <label for="s-rv">Rapport R/V<input id="s-rv" type="range" min="50" max="130" step="5" value="100"><output id="o-rv"></output></label>
+   <canvas id="s-cv" width="600" height="130"></canvas><p class="read" id="s-read"></p>
+   <p class="cap">En haut, les diffuseurs à leur vraie place sur 1 km, sous une houle de 250 m. En bas, là où le SAR les place.</p></div>`;
+  if(k==="cutoff")return `<div class="sim" data-sim="cutoff">
+   <label for="s-lam">Longueur d'onde<input id="s-lam" type="range" min="60" max="400" step="10" value="200"><output id="o-lam"></output></label>
+   <label for="s-phi">Angle avec l'azimut<input id="s-phi" type="range" min="0" max="90" step="5" value="0"><output id="o-phi"></output></label>
+   <label for="s-xi">Déplacement ξ<input id="s-xi" type="range" min="0" max="150" step="5" value="40"><output id="o-xi"></output></label>
+   <canvas id="s-cv" width="330" height="150"></canvas><p class="read" id="s-read"></p>
+   <p class="cap">À gauche la modulation réelle, à droite ce qu'il en reste sur l'image. L'azimut est vertical. Champ de 1,5 km.</p></div>`;
+  if(k==="rain")return `<div class="sim" data-sim="rain">
+   <label for="s-d">Amortissement<input id="s-d" type="range" min="0" max="0.9" step="0.05" value="0.5"><output id="o-d"></output></label>
+   <label for="s-rw">Ondes annulaires<input id="s-rw" type="range" min="0" max="1.2" step="0.05" value="0.5"><output id="o-rw"></output></label>
+   <label for="s-g">Rafale descendante<input id="s-g" type="range" min="0" max="1" step="0.05" value="0.6"><output id="o-g"></output></label>
+   <canvas id="s-cv" width="200" height="200" style="width:220px;height:220px"></canvas><p class="read" id="s-read"></p>
+   <p class="cap">Modèle qualitatif pour fixer les idées : les curseurs ne sont pas des grandeurs physiques étalonnées.</p></div>`;
+  if(k==="spectrum")return `<div class="sim" data-sim="spectrum">
+   <label for="s-beta">Pente β<input id="s-beta" type="range" min="0" max="4" step="0.1" value="2"><output id="o-beta"></output></label>
+   <canvas id="s-cv" width="128" height="128" style="width:256px;height:256px"></canvas><p class="read" id="s-read"></p>
+   <p class="cap">Champ gaussien synthétique de spectre P(k) ∝ k^−β. Seule la pente change, le tirage aléatoire reste le même.</p></div>`;
+  if(k==="phases")return `<div class="sim" data-sim="phases">
+   <label for="s-al">Brouillage des phases<input id="s-al" type="range" min="0" max="1" step="0.05" value="0"><output id="o-al"></output></label>
+   <canvas id="s-cv" width="264" height="128" style="width:528px"></canvas><p class="read" id="s-read"></p>
+   <p class="cap">À gauche l'image de départ. À droite la même, avec les phases de Fourier brouillées. Les amplitudes ne sont jamais modifiées.</p></div>`;
+  if(k==="wavelet")return `<div class="sim" data-sim="wavelet">
+   <label for="s-j">Échelle j<input id="s-j" type="range" min="0" max="4" step="1" value="2"><output id="o-j"></output></label>
+   <label for="s-l">Orientation<input id="s-l" type="range" min="0" max="3" step="1" value="1"><output id="o-l"></output></label>
+   <canvas id="s-cv" width="264" height="128" style="width:528px"></canvas><p class="read" id="s-read"></p>
+   <p class="cap">À gauche l'ondelette dans l'image (partie réelle, agrandie deux fois). À droite sa tache dans l'espace de Fourier. Ondelette de type Morlet, L = 4.</p></div>`;
+  if(k==="filter-re"||k==="filter-mod")return `<div class="sim" data-sim="filter">
+   <label for="s-j">Échelle j<input id="s-j" type="range" min="0" max="4" step="1" value="2"><output id="o-j"></output></label>
+   <label for="s-l">Orientation<input id="s-l" type="range" min="0" max="3" step="1" value="1"><output id="o-l"></output></label>
+   <label for="s-mode">Afficher<select id="s-mode"><option value="re">la partie réelle</option><option value="mod" ${k==="filter-mod"?"selected":""}>le module</option></select><output></output></label>
+   <canvas id="s-cv" width="264" height="128" style="width:528px"></canvas><p class="read" id="s-read"></p>
+   <p class="cap">À gauche une image synthétique : houle et cellule. À droite la carte I ⋆ ψ pour l'ondelette choisie. S1 et S2 sont calculés sur cette carte.</p></div>`;
+  if(k==="mix")return `<div class="sim" data-sim="mix">
+   <label for="s-amp">Force du bruit<input id="s-amp" type="range" min="0" max="3" step="0.1" value="1"><output id="o-amp"></output></label>
+   <canvas id="s-cv" width="400" height="128" style="width:600px"></canvas><p class="read" id="s-read"></p>
+   <p class="cap">De gauche à droite : le signal s, le bruit n, et leur somme d. Dans la réalité, seule l'image de droite est observée.</p></div>`;
+  if(k==="gallery"){const g=[["waves",31,{mw:.5,a:.7},"Houle pure"],["streaks",12,{},"Traînées de vent"],["rain",9,{d:.7,rw:.2,g:.9},"Cellule de pluie"],["lowwind",6,{},"Zone de vent faible"],["front",2,{},"Front atmosphérique"]];
+   return `<div class="gallery">${g.map(x=>`<figure style="margin:0">${sceneTag(x,"g",120)}<figcaption class="cap">${x[3]}</figcaption></figure>`).join("")}</div><p class="cap">Vignettes synthétiques produites par cette page, pas des images satellites.</p>`}
+  return "";
+}
+function updateSim(){
+  const box=document.querySelector(".sim[data-sim]");if(!box)return;const k=box.dataset.sim,$=id=>document.getElementById(id);
+  const cv=$("s-cv"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height,ink=css("--ink"),mut=css("--muted"),acc=css("--accent"),sea=css("--sea");
+  const fr=(v,n)=>v.toFixed(n).replace(".",",");
+  if(k==="bragg"){
+    const lam=+$("s-band").value,th=+$("s-inc").value,lb=lam/(2*Math.sin(th*Math.PI/180));
+    $("o-inc").textContent=fr(th,1)+"°";
+    ctx.clearRect(0,0,W,H);const px=10;ctx.strokeStyle=sea;ctx.lineWidth=2;ctx.beginPath();
+    for(let x=0;x<=W;x++){const y=36+12*Math.sin(6.2832*x/(lb*px));x?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.stroke();
+    ctx.strokeStyle=mut;ctx.fillStyle=mut;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(10,68);ctx.lineTo(10+5*px,68);ctx.moveTo(10,64);ctx.lineTo(10,72);ctx.moveTo(10+5*px,64);ctx.lineTo(10+5*px,72);ctx.stroke();
+    ctx.font="12px "+css("--mono");ctx.fillText("5 cm",16+5*px,72);
+    $("s-read").textContent="λ_B = "+fr(lb,1)+" cm";
+  }else if(k==="bunch"){
+    const u=+$("s-u").value,rv=+$("s-rv").value,L=250,kk=6.2832/L,c=kk*rv*u;
+    $("o-u").textContent=fr(u,2)+" m/s";$("o-rv").textContent=rv+" s";
+    ctx.clearRect(0,0,W,H);const sx=(W-20)/1000;
+    ctx.fillStyle=mut;ctx.font="12px "+css("--mono");ctx.fillText("mer",10,14);ctx.fillText("image SAR",10,82);
+    for(let i=0;i<100;i++){const x=i*10+5,v=Math.sin(kk*x),xd=x+rv*u*v;
+      ctx.fillStyle=v>0?acc:sea;ctx.fillRect(10+x*sx-1.5,24,3,22);
+      if(xd>=0&&xd<=1000){ctx.globalAlpha=.75;ctx.fillRect(10+xd*sx-1.5,92,3,22);ctx.globalAlpha=1}}
+    $("s-read").textContent="Décalage maximal : "+Math.round(rv*u)+" m · "+(c<.3?"régime quasi linéaire":c<1?"les diffuseurs se tassent nettement":"les diffuseurs se croisent : régime non linéaire");
+  }else if(k==="cutoff"){
+    const lam=+$("s-lam").value,phi=+$("s-phi").value*Math.PI/180,xi=+$("s-xi").value;
+    $("o-lam").textContent=lam+" m";$("o-phi").textContent=$("s-phi").value+"°";$("o-xi").textContent=xi+" m";
+    const kaz=6.2832/lam*Math.cos(phi),fac=Math.exp(-.5*kaz*kaz*xi*xi),N=150,img=ctx.createImageData(W,H);
+    for(let j=0;j<H;j++)for(let i=0;i<W;i++){let v=0;const k4=4*(j*W+i);
+      if(i<N||i>=W-N){const x=(i<N?i:i-(W-N))*10,y=j*10,m=(i<N?1:fac)*.45;
+        const I=.5+m*Math.cos(6.2832/lam*(y*Math.cos(phi)+x*Math.sin(phi)));v=255*I;img.data[k4+3]=255}
+      img.data[k4]=img.data[k4+1]=img.data[k4+2]=v}
+    ctx.putImageData(img,0,0);
+    $("s-read").textContent="Contraste restant sur l'image : "+Math.round(fac*100)+" %";
+  }else if(k==="spectrum"){
+    const be=+$("s-beta").value;$("o-beta").textContent=fr(be,1);showArr(ctx,grf(128,be,9),128,0);
+    $("s-read").textContent=be<1?"Énergie surtout dans les petits détails":be<2.6?"Énergie répartie entre les échelles":"Énergie surtout dans les grandes structures";
+  }else if(k==="phases"){
+    const al=+$("s-al").value,N=128,a=sample("cells",3,{},N),re=Float64Array.from(a),im=new Float64Array(N*N),wr=new Float64Array(N*N),wi=new Float64Array(N*N),r=rng(99);
+    $("o-al").textContent=Math.round(al*100)+" %";
+    for(let i=0;i<N*N;i++)wr[i]=r()-.5;fft2(re,im,N,false);fft2(wr,wi,N,false);
+    for(let i=0;i<N*N;i++){const m=Math.hypot(re[i],im[i]),t=Math.atan2(im[i],re[i])+al*Math.atan2(wi[i],wr[i]);re[i]=m*Math.cos(t);im[i]=m*Math.sin(t)}
+    fft2(re,im,N,true);ctx.clearRect(0,0,W,H);showArr(ctx,a,N,0,70);showArr(ctx,re,N,136,70);
+    $("s-read").textContent="Spectre de puissance : identique des deux côtés, quel que soit le curseur.";
+  }else if(k==="wavelet"||k==="filter"){
+    const j=+$("s-j").value,l=+$("s-l").value,N=128,kj=2.356/Math.pow(2,j),sg=.8*Math.pow(2,j),th=l*Math.PI/4,cx=kj*Math.cos(th),cy=kj*Math.sin(th);
+    $("o-j").textContent="2^"+j+" = "+Math.pow(2,j)+" px";$("o-l").textContent=(l*45)+"°";ctx.clearRect(0,0,W,H);
+    if(k==="wavelet"){const A=new Float64Array(N*N),B=new Float64Array(N*N);
+      for(let y=0;y<N;y++)for(let x=0;x<N;x++){const u=(x-64)/2,v=(y-64)/2;A[y*N+x]=Math.exp(-(u*u+v*v)/(2*sg*sg))*Math.cos(cx*u+cy*v);
+        const qx=(x-64)/64*Math.PI-cx,qy=(y-64)/64*Math.PI-cy;B[y*N+x]=2*Math.exp(-(qx*qx+qy*qy)*sg*sg/2)-1}
+      showArr(ctx,A,N,0,120);showArr(ctx,B,N,136,127);
+      $("s-read").textContent="Longueur d'onde d'environ "+fr(6.2832/kj,1)+" px. Plus l'ondelette est grande dans l'image, plus sa tache de Fourier est petite et proche du centre.";
+    }else{const a=sample("rain",17,{d:.8,rw:0,g:.9,mw:.3,a:.785,lw:.085},N),re=Float64Array.from(a),im=new Float64Array(N*N),mod=$("s-mode").value==="mod";
+      fft2(re,im,N,false);
+      for(let y=0;y<N;y++)for(let x=0;x<N;x++){const qx=kf(x,N)-cx,qy=kf(y,N)-cy,g=Math.exp(-(qx*qx+qy*qy)*sg*sg/2);re[y*N+x]*=g;im[y*N+x]*=g}
+      fft2(re,im,N,true);let s1=0,s2=0;const o=new Float64Array(N*N);
+      for(let i=0;i<N*N;i++){const m=Math.hypot(re[i],im[i]);s1+=m;s2+=m*m;o[i]=mod?m:re[i]}s1/=N*N;s2/=N*N;
+      const sd=Math.sqrt(s2)||1;for(let i=0;i<N*N;i++)o[i]=mod?(o[i]/sd*1.6-1.2):o[i]/sd;
+      showArr(ctx,a,N,0,60);showArr(ctx,o,N,136,70);
+      $("s-read").textContent="S1 = "+fr(s1,3)+" · S2 = "+fr(s2,4)+" · S1²/S2 = "+fr(s1*s1/(s2||1),2);}
+  }else if(k==="mix"){
+    const am=+$("s-amp").value,N=128,s=sample("cells",22,{},N),n=grf(N,2.2,4),d=new Float64Array(N*N),an=new Float64Array(N*N);
+    $("o-amp").textContent="× "+fr(am,1);for(let i=0;i<N*N;i++){an[i]=am*n[i];d[i]=s[i]+an[i]}
+    ctx.clearRect(0,0,W,H);showArr(ctx,s,N,0,45);showArr(ctx,an,N,136,45);showArr(ctx,d,N,272,45);
+    $("s-read").textContent="Puissance du bruit / puissance du signal = "+fr(am*am,1);
+  }else if(k==="rain"){
+    const d=+$("s-d").value,rw=+$("s-rw").value,g=+$("s-g").value;
+    $("o-d").textContent=fr(d,2);$("o-rw").textContent=fr(rw,2);$("o-g").textContent=fr(g,2);
+    drawScene(cv,"rain",17,{d,rw,g,mw:.22});
+    const net=1-d+rw;$("s-read").textContent="Cœur de la cellule : "+(net<.85?"plus sombre que le voisinage":net>1.15?"plus clair que le voisinage":"presque invisible, les deux effets se compensent");
+  }
+}
+
+/* ---------- Vues ---------- */
+const main=document.getElementById("main");
+let view="parcours", branch=5, P=null, bibAll=false, bibTheme="tous", qSrc="all", qN=10;
+function renderStats(){
+  const n=dueItems().length;
+  document.getElementById("stats").innerHTML=`<span><b>${S.xp}</b> pts</span><span><b>${S.streak}</b> j de suite</span><span><b>${n}</b> à réviser</span>`;
+  document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.dataset.tab===view&&!P)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  setSync();
+}
+function render(){
+  renderStats();
+  if(P)return renderPlayer();
+  if(view==="revision")main.innerHTML=viewRevision();
+  else if(view==="bibliotheque")main.innerHTML=viewBiblio();
+  else if(view==="quiz")main.innerHTML=viewQuiz();
+  else main.innerHTML=viewParcours();
+  paintScenes(main);
+}
+function viewParcours(){
+  const L=cur(),dc=doneCount(),next=L.findIndex((l,i)=>!S.done[l.id]&&lessonOpen(i)),nl=L[next];
+  let h=`<section class="panel resume"><div>
+    <p class="eyebrow">Branche ${S.ob} · ${dc} leçon${dc>1?"s":""} sur ${L.length}</p>
+    <h2>${nl?(dc?"Reprendre : ":"Commencer : ")+esc(nl.t):"Branche terminée"}</h2>
+    <p class="muted">${nl?`${nl.lvl} · environ ${nl.min} min · ${nl.ex.length} exercices`:"Passe à la révision pour ancrer ce que tu as vu, ou ouvre la bibliothèque."}</p>
+    <div class="bar" aria-hidden="true"><i style="width:${100*dc/L.length}%"></i></div></div>
+    <div class="row">${nl?`<button class="btn accent" data-act="lesson" data-i="${next}">${dc?"Continuer":"Démarrer"}</button>`:`<a class="btn accent" href="#revision" style="text-decoration:none">Réviser</a>`}
+    ${dc===0?`<button class="btn ghost" data-act="placement">Je connais déjà le sujet</button>`:""}</div></section>
+   <div class="branches" role="group" aria-label="Branches">${BRANCHES.map(b=>`<button data-act="branch" data-n="${b.n}" aria-pressed="${b.n===branch}"><small>Branche ${b.n}${b.open?"":" · à venir"}</small>${esc(b.t)}</button>`).join("")}</div>`;
+  const b=BRANCHES.find(x=>x.n===branch);
+  if(!b.open){h+=`<section class="panel soon"><h3>${esc(b.t)}</h3><p class="muted">Cette branche n'est pas encore rédigée. Notions prévues :</p><ul>${b.soon.map(s=>`<li>${esc(s)}</li>`).join("")}</ul><p class="note">Chaque branche est écrite après vérification en ligne de ses références, comme les branches 5 et 6.</p></section>`;return h}
+  h+=`<div class="track">`+L.map((l,i)=>{
+    const dn=!!S.done[l.id],op=lessonOpen(i),st=dn?"done":op?"open":"locked";
+    return `<button class="node ${st}" data-act="lesson" data-i="${i}" ${op?"":"disabled"} aria-label="Leçon ${i+1} : ${esc(l.t)}${dn?", terminée":op?"":", verrouillée"}">
+      ${sceneTag(l.scene,"thumb",88)}
+      <span><span class="eyebrow">Leçon ${i+1} · ${l.lvl}</span><span class="t">${esc(l.t)}</span>
+      ${dn?`<span class="pill good">terminée</span>`:op?`<span class="pill acc">${l.min} min</span>`:`<span class="pill mut">verrouillée</span>`}</span></button>`}).join("")+`</div>`;
+  return h;
+}
+function viewRevision(){
+  const due=dueItems(),seen=Object.keys(S.items);
+  let h=`<section class="sec"><p class="eyebrow">Répétition espacée</p><h2>Révision</h2>`;
+  if(!seen.length)h+=`<p class="muted" style="margin-top:8px">Rien à réviser pour l'instant. Les exercices que tu fais dans le parcours reviennent ici au bon moment : le lendemain, puis après 3, 7, 16 et 35 jours.</p><p style="margin-top:16px"><a class="btn" href="#parcours" style="text-decoration:none">Aller au parcours</a></p>`;
+  else if(due.length)h+=`<p style="margin-top:8px"><b>${due.length}</b> exercice${due.length>1?"s":""} à revoir aujourd'hui, sur ${seen.length} déjà rencontrés.</p><p style="margin-top:16px"><button class="btn accent" data-act="review">Lancer la révision</button></p>`;
+  else{const nx=Math.min(...seen.map(id=>S.items[id].due))-today();h+=`<p style="margin-top:8px">Tu es à jour. Prochaine révision dans ${nx} jour${nx>1?"s":""}.</p><p style="margin-top:16px"><button class="btn ghost" data-act="review-any">Réviser quand même</button></p>`}
+  const boxes=[0,0,0,0,0,0];seen.forEach(id=>boxes[S.items[id].box]++);
+  if(seen.length)h+=`<div class="panel" style="margin-top:24px"><h3>Où en sont tes acquis</h3><p class="muted">Un exercice réussi monte d'un cran et revient plus tard. Un exercice raté repart du début.</p><p class="mono" style="margin-top:10px">${boxes.map((n,i)=>`${i===0?"à revoir":"+"+IV[i]+" j"} : ${n}`).join(" · ")}</p></div>`;
+  return h+`</section>`;
+}
+function bibtex(ids){return ids.map(id=>{const r=REFS[id];const many=/, et al\.$/.test(r.a);const au=r.a.replace(/, et al\.$/,"").replace(/ et /g," and ").replace(/\., /g,". and ")+(many?" and others":"");
+  return `@article{${id},\n  author  = {${au}},\n  title   = {${r.t}},\n  journal = {${r.j}},\n  year    = {${r.y}},${r.v?`\n  volume  = {${r.v}},`:""}${r.p?`\n  pages   = {${r.p.replace("–","--")}},`:""}\n  doi     = {${r.doi}}\n}`}).join("\n\n")}
+function viewBiblio(){
+  const un=unlockedRefs(),ids=Object.keys(REFS).sort((a,b)=>REFS[a].y-REFS[b].y);
+  let h=`<section class="sec"><p class="eyebrow">${ids.length} articles vérifiés · ${un.size} rencontrés dans tes leçons</p><h2>Bibliothèque</h2>
+   <p class="note" style="margin-top:6px">Chaque référence a été retrouvée en ligne avec son DOI. Les fiches résument les résumés publiés par les auteurs, pas une lecture intégrale : elles servent à choisir quoi lire et dans quel ordre.</p></section>`;
+  h+=`<section class="sec synth"><h2>Synthèses</h2>${SYNTH.map(s=>`<div class="panel" style="margin-top:14px"><h3>${esc(s.t)}</h3>${s.p.map(p=>`<p>${rich(p)}</p>`).join("")}</div>`).join("")}</section>`;
+  h+=`<section class="sec"><h2>Parcours de lecture</h2><p class="muted">Un ordre conseillé par thème, du texte fondateur aux travaux récents.</p><div class="paths">${PATHS.map(p=>`<div class="panel"><h3>${esc(p.t)}</h3><ol>${p.ids.map(id=>`<li>${cite(id)} ${un.has(id)?`<span class="pill good">vu</span>`:""}</li>`).join("")}</ol></div>`).join("")}</div></section>`;
+  h+=`<section class="sec"><h2>Fiches</h2><div class="filters" role="group" aria-label="Filtrer par thème">${["tous",...Object.keys(THEMES)].map(t=>`<button data-act="theme" data-t="${t}" aria-pressed="${bibTheme===t}">${t==="tous"?"Tous":THEMES[t]}</button>`).join("")}</div>`;
+  h+=ids.filter(id=>bibTheme==="tous"||REFS[id].th===bibTheme).map(id=>{const r=REFS[id];return `<details class="paper"><summary><span class="eyebrow">${r.y} · ${THEMES[r.th]}${un.has(id)?" · vu en leçon":""}</span><span class="t">${esc(r.t)}</span><span class="muted">${esc(r.a)} · <i>${esc(r.j)}</i>${r.v?" "+r.v:""}${r.p?", "+r.p:""}</span></summary>
+    <dl><dt>Question</dt><dd>${esc(r.q)}</dd><dt>Apport</dt><dd>${esc(r.ap)}</dd><dt>À garder en tête</dt><dd>${esc(r.g)}</dd>
+    <dt>À lire avant</dt><dd>${r.pre.length?r.pre.map(cite).join(", "):"Aucun prérequis : bon point d'entrée."}</dd>
+    <dt>Source</dt><dd><a href="https://doi.org/${r.doi}" target="_blank" rel="noopener" class="mono">doi:${r.doi}</a></dd></dl></details>`}).join("");
+  const exp=bibAll?ids:ids.filter(id=>un.has(id));
+  h+=`</section><section class="sec"><h2>Export BibTeX</h2><div class="filters"><button data-act="bibmode" data-all="0" aria-pressed="${!bibAll}">Articles vus en leçon (${un.size})</button><button data-act="bibmode" data-all="1" aria-pressed="${bibAll}">Tous (${ids.length})</button></div>
+   <textarea class="bib" id="bib" readonly aria-label="Entrées BibTeX">${esc(exp.length?bibtex(exp):"% Termine une leçon pour ajouter ses références ici, ou choisis « Tous ».")}</textarea>
+   <div class="row" style="margin-top:10px"><button class="btn" data-act="copy">Copier</button><span class="muted" id="copied" role="status"></span></div></section>`;
+  return h;
+}
+
+/* ---------- Quiz ---------- */
+const QSRC={all:"Tout le contenu",b5:"Branche 5 · Pluie et vagues",b6:"Branche 6 · Scattering et séparation",seen:"Leçons terminées",wrong:"Mes erreurs"};
+function quizPool(src){
+  const ls=src==="b5"?LESSONS:src==="b6"?B6.lessons:src==="seen"?ALL.filter(l=>S.done[l.id]):ALL;
+  let ids=[];ls.forEach(l=>l.ex.forEach((_,k)=>ids.push(l.id+"."+k)));
+  if(src==="wrong")ids=Object.keys(S.items).filter(id=>S.items[id].box===0);
+  return ids.filter(id=>findEx(id));
+}
+function viewQuiz(){
+  const pool=quizPool(qSrc),n=Math.min(qN,pool.length),key=qSrc+"."+qN,best=S.best[key];
+  return `<section class="sec"><p class="eyebrow">Mode quiz</p><h2>Quiz</h2>
+   <p class="muted" style="margin-top:6px">Une série de questions tirées au hasard, sans les fiches de cours. Le score s'affiche à la fin, et les questions ratées rejoignent la révision.</p>
+   <div class="qgrid">
+    <div><h3>Sur quoi ?</h3><div class="filters" role="group" aria-label="Contenu du quiz">${Object.keys(QSRC).map(k=>`<button data-act="qsrc" data-k="${k}" aria-pressed="${qSrc===k}">${QSRC[k]} <span class="muted mono">${quizPool(k).length}</span></button>`).join("")}</div></div>
+    <div><h3>Combien de questions ?</h3><div class="filters" role="group" aria-label="Nombre de questions">${[5,10,20,0].map(k=>`<button data-act="qn" data-k="${k}" aria-pressed="${qN===(k||999)}">${k||"Toutes"}</button>`).join("")}</div></div>
+    <div class="panel"><p>${n?`<b>${n}</b> question${n>1?"s":""} · ${esc(QSRC[qSrc])}`:(qSrc==="seen"?"Termine au moins une leçon pour utiliser ce choix.":qSrc==="wrong"?"Aucune erreur en attente : bravo.":"Aucune question disponible.")}</p>
+     ${best!==undefined?`<p class="muted mono" style="margin-top:6px">Meilleur score sur ce réglage : ${best} %</p>`:""}
+     <p class="muted mono" style="margin-top:2px">${S.qz} quiz joué${S.qz>1?"s":""} au total</p>
+     <div class="row" style="margin-top:14px"><button class="btn accent" data-act="quiz" ${n?"":"disabled"}>Lancer le quiz</button></div></div>
+   </div></section>`;
+}
+function startQuiz(){const pool=quizPool(qSrc);if(!pool.length)return;const r=rng(Date.now()%1e9);
+  const ids=shuffle(pool,r).slice(0,Math.min(qN,pool.length));
+  P={mode:"quiz",title:"Quiz",key:qSrc+"."+qN,i:0,ok:0,n:0,steps:ids.map(findEx).map(x=>({kind:"ex",ex:x.ex,id:x.id}))};prep();render();window.scrollTo(0,0)}
+
+/* ---------- Lecteur de leçon ---------- */
+function startLesson(i){const l=cur()[i];if(!lessonOpen(i))return;
+  P={mode:"lesson",lesson:l,title:l.t,i:0,ok:0,n:0,steps:[...l.cards.map(c=>({kind:"card",c})),...l.ex.map((ex,k)=>({kind:"ex",ex,id:l.id+"."+k}))]};prep();render();window.scrollTo(0,0)}
+function startReview(any){let ids=any?Object.keys(S.items):dueItems();const r=rng(today()+ids.length);ids=shuffle(ids,r).slice(0,10);
+  const steps=ids.map(findEx).filter(Boolean).map(x=>({kind:"ex",ex:x.ex,id:x.id}));if(!steps.length)return;
+  P={mode:"review",title:"Révision",i:0,ok:0,n:0,steps};prep();render();window.scrollTo(0,0)}
+function startPlacement(){P={mode:"placement",title:"Test de placement",i:0,ok:0,n:0,arr:cur(),steps:cur().map(l=>({kind:"ex",ex:l.ex[0],id:l.id+".0"}))};prep();render();window.scrollTo(0,0)}
+function prep(){const s=P.steps[P.i];P.ans=null;P.correct=null;if(!s||s.kind!=="ex")return;const r=rng(Date.now()%1e6+P.i),e=s.ex;
+  if(e.k==="qcm")P.perm=shuffle(e.o.map((_,i)=>i),r);
+  if(e.k==="order"){P.pool=shuffle(e.items.map((_,i)=>i),r);P.seq=[]}
+  if(e.k==="match")P.perm=shuffle(e.pairs.map((_,i)=>i),r)}
+function grade(ok){const s=P.steps[P.i];P.correct=ok;P.n++;if(ok){P.ok++;S.xp+=10;touchStreak()}
+  const it=S.items[s.id]||{box:0,due:0};it.box=ok?Math.min(5,it.box+1):0;it.due=today()+IV[it.box];S.items[s.id]=it;save();renderPlayer();renderStats()}
+function finish(){
+  let msg="",extra="";
+  if(P.mode==="lesson"){const pass=P.n===0||P.ok/P.n>=.6;if(pass){S.done[P.lesson.id]=true;save()}
+    msg=pass?`Leçon terminée : ${P.ok} bonne${P.ok>1?"s":""} réponse${P.ok>1?"s":""} sur ${P.n}.`:`${P.ok} sur ${P.n} : il en faut 60 % pour valider. Les exercices ratés t'attendent en révision.`;
+    extra=`<h3 style="margin-top:20px">D'où vient cette leçon</h3><ul class="srcs">${P.lesson.src.map(id=>`<li>${cite(id)}. <span class="muted">${esc(REFS[id].t)}</span></li>`).join("")}</ul>`}
+  else if(P.mode==="placement"){const k=P.ok;P.arr.slice(0,k).forEach(l=>S.done[l.id]=true);save();
+    msg=k?`Tu démarres à la leçon ${Math.min(k+1,P.arr.length)}. Les ${k} première${k>1?"s":""} sont validées.`:"On commence par le début : c'est le plus sûr."}
+  else if(P.mode==="quiz"){const pc=P.n?Math.round(100*P.ok/P.n):0,prev=S.best[P.key],rec=prev===undefined||pc>prev;
+    if(rec)S.best[P.key]=pc;S.qz++;save();
+    msg=`<span class="qscore">${pc} %</span><br>${P.ok} bonne${P.ok>1?"s":""} réponse${P.ok>1?"s":""} sur ${P.n}`;
+    extra=`<p class="muted" style="margin-top:12px">${rec&&prev!==undefined?"Nouveau record sur ce réglage.":rec?"Premier score enregistré sur ce réglage.":"Record à battre : "+prev+" %."}${P.ok<P.n?" Les questions ratées sont dans la révision.":""}</p>`;
+    main.innerHTML="";P=null;renderStats();
+    main.innerHTML=`<section class="player panel"><p class="eyebrow">Résultat du quiz</p><h2>${msg}</h2>${extra}<div class="row" style="margin-top:22px"><button class="btn accent" data-act="quiz-again">Rejouer</button><a class="btn ghost" href="#quiz" data-act="home" style="text-decoration:none">Changer de réglage</a></div></section>`;return}
+  else msg=`Révision terminée : ${P.ok} sur ${P.n}.`;
+  P=null;renderStats();
+  main.innerHTML=`<section class="player panel"><p class="eyebrow">Résultat</p><h2>${msg}</h2>${extra}<div class="row" style="margin-top:22px"><a class="btn accent" href="#parcours" data-act="home" style="text-decoration:none">Retour au parcours</a><a class="btn ghost" href="#bibliotheque" data-act="home" style="text-decoration:none">Ouvrir la bibliothèque</a></div></section>`;
+}
+function renderPlayer(){
+  const s=P.steps[P.i],pc=100*P.i/P.steps.length;
+  let h=`<section class="player"><div class="row" style="justify-content:space-between"><p class="eyebrow">${esc(P.title)} · ${P.i+1} / ${P.steps.length}</p><button class="btn ghost" data-act="quit">Quitter</button></div><div class="bar" aria-hidden="true"><i style="width:${pc}%"></i></div>`;
+  if(s.kind==="card"){const c=s.c;
+    h+=`<article class="card"><h2>${esc(c.h)}</h2>${c.p.map(p=>`<p>${rich(p)}</p>`).join("")}${c.fig?sceneTag(c.fig)+`<p class="cap">${esc(c.cap||"")}</p>`:""}${c.figs?`<div class="gallery" style="max-width:420px">${c.figs.map(x=>`<figure style="margin:0">${sceneTag(x,"g",128)}<figcaption class="cap">${esc(x[3])}</figcaption></figure>`).join("")}</div><p class="cap">Images synthétiques produites par cette page.</p>`:""}${c.sim?simHTML(c.sim):""}</article><div class="row" style="margin-top:18px"><button class="btn" data-act="next">Continuer</button></div>`}
+  else{const e=s.ex,done=P.correct!==null;
+    h+=`<article class="card"><h2>${esc(e.q)}</h2>${e.scene?sceneTag(e.scene)+`<p class="cap">Vignette synthétique.</p>`:""}`;
+    if(e.k==="qcm")h+=`<div class="opts">${P.perm.map(i=>`<button class="opt ${done?(i===0?"right":i===P.ans?"wrong":""):""}" data-act="pick" data-i="${i}" ${done?"disabled":""}>${esc(e.o[i])}</button>`).join("")}</div>`;
+    if(e.k==="order"){h+=`<p class="muted">Touche les éléments dans l'ordre. Touche un élément placé pour le retirer.</p><ol class="seq">${P.seq.map(i=>`<li><button class="chip" data-act="unseq" data-i="${i}" ${done?"disabled":""}>${esc(e.items[i])}</button></li>`).join("")}</ol><div class="chips">${P.pool.filter(i=>!P.seq.includes(i)).map(i=>`<button class="chip" data-act="seq" data-i="${i}">${esc(e.items[i])}</button>`).join("")}</div>${done?"":`<button class="btn" data-act="check-order" ${P.seq.length<e.items.length?"disabled":""}>Vérifier</button>`}`;
+      if(done&&!P.correct)h+=`<p class="muted">Bon ordre :</p><ol class="seq">${e.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`}
+    if(e.k==="match"){h+=`<div class="match">${e.pairs.map((p,k)=>`<label for="m-${k}"><b>${esc(p[0])}</b><select id="m-${k}" ${done?"disabled":""}><option value="">Choisir…</option>${P.perm.map(i=>`<option value="${i}" ${P.ans&&P.ans[k]===i?"selected":""}>${esc(e.pairs[i][1])}</option>`).join("")}</select>${done&&P.ans&&P.ans[k]!==k?`<span class="muted">Réponse : ${esc(p[1])}</span>`:""}</label>`).join("")}</div>${done?"":`<button class="btn" data-act="check-match">Vérifier</button>`}`}
+    if(done)h+=`<div class="fb ${P.correct?"":"no"}" role="status"><b>${P.correct?"Exact.":"Pas tout à fait."}</b>${esc(e.why)} <span class="muted">Source : ${cite(e.src)}.</span></div><button class="btn" data-act="next">Continuer</button>`;
+    h+=`</article>`}
+  main.innerHTML=h+`</section>`;paintScenes(main);updateSim();
+}
+
+/* ---------- Événements ---------- */
+document.addEventListener("click",ev=>{
+  const el=ev.target.closest("[data-act]");if(!el)return;const a=el.dataset.act;
+  if(a==="lesson")startLesson(+el.dataset.i);
+  else if(a==="placement")startPlacement();
+  else if(a==="branch"){branch=+el.dataset.n;if(BR[branch]){S.ob=branch;save()}render()}
+  else if(a==="review")startReview(false);
+  else if(a==="qsrc"){qSrc=el.dataset.k;render()}
+  else if(a==="qn"){qN=+el.dataset.k||999;render()}
+  else if(a==="quiz"||a==="quiz-again")startQuiz();
+  else if(a==="review-any")startReview(true);
+  else if(a==="quit"){P=null;render()}
+  else if(a==="home"){P=null;setTimeout(route,0)}
+  else if(a==="theme"){bibTheme=el.dataset.t;render()}
+  else if(a==="bibmode"){bibAll=el.dataset.all==="1";render()}
+  else if(a==="copy"){const t=document.getElementById("bib"),out=document.getElementById("copied");
+    const ok=()=>out.textContent="Copié dans le presse-papiers.",ko=()=>{t.focus();t.select();out.textContent="Sélectionné : copie avec Ctrl+C ou Cmd+C."};
+    try{navigator.clipboard.writeText(t.value).then(ok,ko)}catch(e){ko()}}
+  else if(P){
+    const s=P.steps[P.i],e=s.ex;
+    if(a==="next"){if(P.mode==="placement"&&P.correct===false)return finish();P.i++;if(P.i>=P.steps.length)return finish();prep();renderPlayer();window.scrollTo(0,0)}
+    else if(a==="pick"&&P.correct===null){P.ans=+el.dataset.i;grade(P.ans===0)}
+    else if(a==="seq"){P.seq.push(+el.dataset.i);renderPlayer()}
+    else if(a==="unseq"){P.seq=P.seq.filter(i=>i!==+el.dataset.i);renderPlayer()}
+    else if(a==="check-order")grade(P.seq.every((v,i)=>v===i));
+    else if(a==="check-match"){P.ans=e.pairs.map((_,k)=>{const v=document.getElementById("m-"+k).value;return v===""?-1:+v});grade(P.ans.every((v,k)=>v===k))}
+  }
+});
+document.addEventListener("input",ev=>{if(ev.target.closest(".sim"))updateSim()});
+document.addEventListener("change",ev=>{if(ev.target.closest(".sim"))updateSim()});
+function route(){const h=location.hash.replace("#","");view=["parcours","revision","quiz","bibliotheque"].includes(h)?h:"parcours";P=null;render()}
+window.addEventListener("hashchange",route);
+document.querySelectorAll("nav.tabs a").forEach(a=>a.addEventListener("click",()=>setTimeout(route,0)));
+localLoad();branch=S.ob;route();initCloud();
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
