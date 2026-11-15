@@ -1,5 +1,5 @@
 // Cache hors ligne : on sert le cache, puis on met à jour en arrière-plan.
-const V="imagette-v1";
+const V="imagette-v2";
 const FILES=["./","index.html","b6.js","manifest.webmanifest","fonts/fonts.css",
 "fonts/bricolage-grotesque-latin-500-normal.woff2","fonts/bricolage-grotesque-latin-700-normal.woff2",
 "fonts/ibm-plex-sans-latin-400-normal.woff2","fonts/ibm-plex-sans-latin-500-normal.woff2","fonts/ibm-plex-sans-latin-600-normal.woff2",
